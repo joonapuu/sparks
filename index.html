@@ -17,6 +17,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <style>
+    /* ---------- grain ----------
+       A reusable SVG noise pattern (fractalNoise via feTurbulence) stored as a
+       CSS variable so any surface can layer it via ::after + mix-blend-mode.
+       stitchTiles='stitch' ensures the 240x240 tile repeats seamlessly. */
+    :root {
+      --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    }
+
     /* ---------- reset & base ---------- */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
@@ -68,41 +76,32 @@
       pointer-events: auto;
     }
 
-    /* ---------- category picker ---------- */
+    /* ---------- category picker ----------
+       Layout: flex column, header takes its natural height, grid fills the
+       remaining space as 2 cols × 7 rows of equal-height tiles. No scroll. */
     #picker {
       background: #0b0b0d;
-      padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
-      overflow-y: auto;
-    }
-    .picker-header {
-      padding: 8px 8px 24px;
-      text-align: center;
-    }
-    .picker-header h1 {
-      margin: 0;
-      font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
-      font-size: 44px;
-      font-weight: 400;
-      letter-spacing: -0.01em;
-      color: #fff;
-    }
-    .picker-header p {
-      margin: 8px 0 0;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.55);
-      font-weight: 400;
-      letter-spacing: 0.02em;
+      padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
+      overflow: hidden;
     }
     .category-grid {
+      flex: 1 1 auto;
+      /* min-height:0 is essential — otherwise flex children refuse to shrink
+         below their intrinsic size and the grid overflows. */
+      min-height: 0;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      padding: 0 4px;
+      grid-template-rows: repeat(7, 1fr);
+      gap: 8px;
+      padding: 0 2px;
     }
     .category-tile {
-      aspect-ratio: 1.35 / 1;
-      border-radius: 18px;
-      padding: 14px 16px;
+      /* No aspect-ratio — tiles stretch to fill their 1fr grid cell so all 7
+         rows fit the viewport exactly, whatever the phone size. */
+      min-height: 0;
+      min-width: 0;
+      border-radius: 16px;
+      padding: 10px 14px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -111,28 +110,39 @@
       color: var(--cat-fg);
       font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
       font-weight: 400;
-      font-size: 20px;
+      /* Larger tile title — wraps onto 2 lines for longer names so the
+         last word doesn't clip off the right edge of the tile. */
+      font-size: clamp(20px, 5.6vw, 28px);
       line-height: 1.05;
       letter-spacing: -0.01em;
       transition: transform 120ms ease, filter 120ms ease;
       background: var(--cat-color);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
       position: relative;
       overflow: hidden;
+      /* Scope mix-blend-mode to this tile, so grain only blends with the tile
+         background — not whatever is behind in the picker. */
+      isolation: isolate;
     }
-    .category-tile::before {
+    /* Grainy noise overlay — the only decorative layer on the tile. Flat color
+       beneath, grain on top (blended), text on top of grain via z-index. */
+    .category-tile::after {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 60%);
+      background-image: var(--grain);
+      background-size: 180px 180px;
+      mix-blend-mode: overlay;
+      opacity: 0.95;
       pointer-events: none;
+      z-index: 0;
     }
     .category-tile:active { transform: scale(0.96); filter: brightness(0.98); }
     .category-tile .tile-count {
       font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 500;
-      opacity: 0.7;
+      opacity: 0.65;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       position: relative;
@@ -142,7 +152,13 @@
       position: relative;
       z-index: 1;
       max-width: 100%;
+      /* Multi-word names wrap; `balance` evens out the two lines instead of
+         leaving one long + one orphaned word. Hyphens allow graceful breaks
+         for any single long word (e.g. "Human-Centric"). */
       overflow-wrap: break-word;
+      text-wrap: balance;
+      hyphens: auto;
+      -webkit-hyphens: auto;
     }
 
     /* ---------- card view ---------- */
@@ -151,15 +167,24 @@
       color: var(--cat-fg, #222);
       user-select: none;
       -webkit-user-select: none;
-      cursor: pointer;
+      /* Vertical-swipe gestures are handled in JS; disable the browser's
+         own vertical gestures on this screen so they don't fight us. */
+      touch-action: none;
+      cursor: grab;
+      isolation: isolate;
     }
-    #cardview::before {
+    #cardview.dragging { cursor: grabbing; }
+    /* Flat color with grain overlay — no decorative gradient. */
+    #cardview::after {
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 85% 12%, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%);
+      background-image: var(--grain);
+      background-size: 220px 220px;
+      mix-blend-mode: overlay;
+      opacity: 0.9;
       pointer-events: none;
+      z-index: 0;
     }
     .card-top {
       display: flex;
@@ -235,15 +260,14 @@
       z-index: 2;
     }
 
-    /* swap animation */
-    .card-body.anim-out .card-question,
-    .card-body.anim-out .card-description {
-      opacity: 0;
-      transform: translateY(-8px);
-      transition: opacity 120ms ease, transform 120ms ease;
+    /* swipe animation — JS sets transform/opacity; these are the baseline transitions */
+    .card-body {
+      transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity   220ms ease;
+      will-change: transform, opacity;
     }
-    .card-question, .card-description {
-      transition: opacity 180ms ease, transform 180ms ease;
+    .card-body.dragging {
+      transition: none;  /* direct drag — no easing while finger is on-screen */
     }
 
     /* ---------- finish screen ---------- */
@@ -254,14 +278,18 @@
       justify-content: center;
       text-align: center;
       padding: 40px 24px;
+      isolation: isolate;
     }
-    #finish::before {
+    #finish::after {
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 50% 20%, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 55%);
+      background-image: var(--grain);
+      background-size: 220px 220px;
+      mix-blend-mode: overlay;
+      opacity: 0.9;
       pointer-events: none;
+      z-index: 0;
     }
     .finish-inner {
       position: relative;
@@ -311,8 +339,7 @@
 
     /* Keep a 2-column layout at all sizes; just cap width on larger screens */
     @media (min-width: 600px) {
-      .category-grid { max-width: 520px; margin: 0 auto; }
-      .category-tile { font-size: 22px; }
+      .category-grid { max-width: 520px; margin: 0 auto; width: 100%; }
     }
   </style>
 </head>
@@ -320,10 +347,6 @@
 
 <!-- Category picker -->
 <section id="picker" class="screen active" aria-label="Choose a category">
-  <div class="picker-header">
-    <h1>Sparks</h1>
-    <p>Pick a category to begin</p>
-  </div>
   <div id="categoryGrid" class="category-grid"></div>
 </section>
 
@@ -337,7 +360,7 @@
     <h2 class="card-question" id="cardQuestion"></h2>
     <p class="card-description" id="cardDescription"></p>
   </div>
-  <div class="card-hint">Tap anywhere for the next card</div>
+  <div class="card-hint">Swipe up for next · swipe down to go back</div>
 </section>
 
 <!-- Finish screen -->
@@ -3745,23 +3768,32 @@ window.CARDS_DATA = {
 (function () {
   "use strict";
 
-  // Category → color theme. Each is a soft pastel background paired with
-  // a very dark tint of the same hue for text — monochromatic per category.
+  // Category → color theme. 14 pastel tiles matching the seven image pairs,
+  // each pair sharing a dark-tinted text colour in the same hue family:
+  //   pink+peach     / burnt brown     (row 1)
+  //   yellow+lime    / dark olive      (row 2)
+  //   mint+light blue/ dark teal       (row 3)
+  //   lilac+dusty pk / dark wine       (row 4)
+  //   periwinkle+lav / dark navy       (row 5)
+  //   grey+grey      / charcoal        (row 6)
+  //   pale grn+p.mnt / dark forest     (row 7)
+  // Arranged so every pair's two tiles, and every family's cousin hues, are
+  // non-adjacent in the alphabetical 2×7 grid.
   const THEMES = {
-    "Machine Learning":      { bg: "#C6E6F0", fg: "#1A4858" },
-    "Social Media Strategy": { bg: "#FFD4E0", fg: "#6B1E3D" },
-    "Brand Strategy":        { bg: "#DDD0F5", fg: "#3C2675" },
-    "Business Design":       { bg: "#C9EBD6", fg: "#1F5A38" },
-    "Campaign":              { bg: "#FFDBC2", fg: "#7A3A1A" },
-    "Conversion":            { bg: "#FFEFBC", fg: "#6B4E12" },
-    "Graphic":               { bg: "#FFCACA", fg: "#7A1F1F" },
-    "Human-Centric":         { bg: "#FFD0C0", fg: "#6F2E18" },
-    "Innovation":            { bg: "#BFE4DC", fg: "#1A5550" },
-    "Naming":                { bg: "#DCE9B8", fg: "#3E5416" },
-    "Planet-Centric":        { bg: "#C5DCC6", fg: "#1F4F2A" },
-    "Serendipity":           { bg: "#E5CFF2", fg: "#501F6B" },
-    "Service Design":        { bg: "#CCDCF2", fg: "#1D3E70" },
-    "Storytelling":          { bg: "#F5C8CE", fg: "#6B1F2B" }
+    "Brand Strategy":        { bg: "#C7DC7A", fg: "#2A2B0D" }, // lime
+    "Business Design":       { bg: "#C9C9C9", fg: "#333333" }, // grey #1
+    "Campaign":              { bg: "#BED6E1", fg: "#0F3239" }, // light blue
+    "Conversion":            { bg: "#CDE0BD", fg: "#102D1E" }, // pale green
+    "Graphic":               { bg: "#D4C670", fg: "#2A2B0D" }, // yellow
+    "Human-Centric":         { bg: "#DFC6DB", fg: "#3E0C2A" }, // lilac
+    "Innovation":            { bg: "#EACFD0", fg: "#411008" }, // pink
+    "Machine Learning":      { bg: "#C0E1D6", fg: "#0F3239" }, // mint
+    "Naming":                { bg: "#C9CDDE", fg: "#1C1C4D" }, // periwinkle
+    "Planet-Centric":        { bg: "#E6CCB2", fg: "#411008" }, // peach
+    "Serendipity":           { bg: "#BEDECA", fg: "#102D1E" }, // pale mint
+    "Service Design":        { bg: "#D6CBDE", fg: "#1C1C4D" }, // lavender
+    "Social Media Strategy": { bg: "#E0C7D0", fg: "#3E0C2A" }, // dusty pink
+    "Storytelling":          { bg: "#C9C9C9", fg: "#333333" }  // grey #2
   };
   const DEFAULT_THEME = { bg: "#eeeeee", fg: "#222222" };
 
@@ -3848,6 +3880,7 @@ window.CARDS_DATA = {
     index = 0;
     setThemeColor(THEMES[cat] || DEFAULT_THEME);
     renderCard();
+    resetCardBodyTransform();
     showScreen(cardViewEl);
   }
 
@@ -3859,20 +3892,80 @@ window.CARDS_DATA = {
     progressEl.textContent = `${index + 1} / ${deck.length}`;
   }
 
-  function advance() {
+  function resetCardBodyTransform() {
+    // Ensure the card-body is centered and fully opaque, with no transition,
+    // so a freshly-entered cardview doesn't inherit a mid-animation state.
+    cardBodyEl.classList.add("dragging");  // disables transition for the snap
+    cardBodyEl.style.transform = "translateY(0)";
+    cardBodyEl.style.opacity = "1";
+    requestAnimationFrame(() => cardBodyEl.classList.remove("dragging"));
+  }
+
+  // --- card navigation (swipe / keyboard) ---
+  // direction: -1 = animate-out upward (swipe up = next)
+  //            +1 = animate-out downward (swipe down = previous)
+  const SLIDE_DISTANCE = "110vh";
+  const ANIM_MS = 200;
+
+  function animateSwap(direction, commit) {
+    // slide current card out in `direction`
+    cardBodyEl.classList.remove("dragging");
+    cardBodyEl.style.transform =
+      direction < 0 ? `translateY(-${SLIDE_DISTANCE})` : `translateY(${SLIDE_DISTANCE})`;
+    cardBodyEl.style.opacity = "0";
+    setTimeout(() => {
+      commit();
+      // reposition incoming card on the opposite side, then animate in to 0
+      cardBodyEl.classList.add("dragging");  // disables transition for the jump
+      cardBodyEl.style.transform =
+        direction < 0 ? `translateY(${SLIDE_DISTANCE})` : `translateY(-${SLIDE_DISTANCE})`;
+      cardBodyEl.style.opacity = "0";
+      // next frame: re-enable transition, slide into place
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          cardBodyEl.classList.remove("dragging");
+          cardBodyEl.style.transform = "translateY(0)";
+          cardBodyEl.style.opacity = "1";
+        });
+      });
+    }, ANIM_MS);
+  }
+
+  function goNext() {
     if (index + 1 >= deck.length) {
-      // Finished
-      finishSubEl.textContent = `That's ${deck.length} cards from ${currentCategory}.`;
-      showScreen(finishEl);
+      // last card — slide it out upward, then show finish screen
+      cardBodyEl.classList.remove("dragging");
+      cardBodyEl.style.transform = `translateY(-${SLIDE_DISTANCE})`;
+      cardBodyEl.style.opacity = "0";
+      setTimeout(() => {
+        finishSubEl.textContent = `That's ${deck.length} cards from ${currentCategory}.`;
+        showScreen(finishEl);
+        // reset card-body state for next time we enter cardview
+        cardBodyEl.classList.add("dragging");
+        cardBodyEl.style.transform = "translateY(0)";
+        cardBodyEl.style.opacity = "1";
+        requestAnimationFrame(() => cardBodyEl.classList.remove("dragging"));
+      }, ANIM_MS);
       return;
     }
-    // brief fade out then swap
-    cardBodyEl.classList.add("anim-out");
-    setTimeout(() => {
-      index++;
-      renderCard();
-      cardBodyEl.classList.remove("anim-out");
-    }, 130);
+    animateSwap(-1, () => { index++; renderCard(); });
+  }
+
+  function goPrevious() {
+    if (index <= 0) {
+      // already on first card — bounce back
+      cardBodyEl.classList.remove("dragging");
+      cardBodyEl.style.transform = "translateY(0)";
+      cardBodyEl.style.opacity = "1";
+      return;
+    }
+    animateSwap(+1, () => { index--; renderCard(); });
+  }
+
+  function snapBack() {
+    cardBodyEl.classList.remove("dragging");
+    cardBodyEl.style.transform = "translateY(0)";
+    cardBodyEl.style.opacity = "1";
   }
 
   function goToPicker() {
@@ -3881,12 +3974,56 @@ window.CARDS_DATA = {
     showScreen(pickerEl);
   }
 
-  // --- events
-  cardViewEl.addEventListener("click", (e) => {
-    // don't treat button taps as card advances
-    if (e.target.closest("button")) return;
-    advance();
+  // --- swipe (pointer events — works for touch + mouse) ---
+  const SWIPE_THRESHOLD_PX = 60;      // minimum travel to count as a swipe
+  const SWIPE_THRESHOLD_VELOCITY = 0.35; // px/ms — a quick flick also commits
+  let dragStartY = null;
+  let dragStartTime = 0;
+  let currentPointerId = null;
+
+  cardViewEl.addEventListener("pointerdown", (e) => {
+    // ignore drags that start on the back button or progress chip
+    if (e.target.closest("button, .progress")) return;
+    currentPointerId = e.pointerId;
+    dragStartY = e.clientY;
+    dragStartTime = e.timeStamp;
+    cardBodyEl.classList.add("dragging");
+    cardViewEl.classList.add("dragging");
+    try { cardViewEl.setPointerCapture(e.pointerId); } catch (_) {}
   });
+
+  cardViewEl.addEventListener("pointermove", (e) => {
+    if (dragStartY === null || e.pointerId !== currentPointerId) return;
+    const dy = e.clientY - dragStartY;
+    // a touch of rubber-banding at the edges so it feels tactile
+    cardBodyEl.style.transform = `translateY(${dy}px)`;
+    // fade out proportionally to distance, but never fully invisible mid-drag
+    const absDy = Math.abs(dy);
+    cardBodyEl.style.opacity = String(Math.max(0.35, 1 - absDy / 400));
+  });
+
+  function endDrag(e) {
+    if (dragStartY === null || (e && e.pointerId !== currentPointerId)) return;
+    const dy = (e ? e.clientY : 0) - dragStartY;
+    const dt = (e ? e.timeStamp : performance.now()) - dragStartTime;
+    const velocity = dy / Math.max(dt, 1); // px/ms (sign preserved)
+    dragStartY = null;
+    currentPointerId = null;
+    cardViewEl.classList.remove("dragging");
+    try { cardViewEl.releasePointerCapture(e && e.pointerId); } catch (_) {}
+
+    const passedDistance = Math.abs(dy) > SWIPE_THRESHOLD_PX;
+    const passedVelocity = Math.abs(velocity) > SWIPE_THRESHOLD_VELOCITY;
+    if (passedDistance || passedVelocity) {
+      if (dy < 0) goNext(); else goPrevious();
+    } else {
+      snapBack();
+    }
+  }
+  cardViewEl.addEventListener("pointerup", endDrag);
+  cardViewEl.addEventListener("pointercancel", endDrag);
+
+  // --- button events ---
   backBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     goToPicker();
@@ -3896,12 +4033,17 @@ window.CARDS_DATA = {
   });
   pickAnotherBtn.addEventListener("click", goToPicker);
 
-  // keyboard support (useful on desktop preview)
+  // --- keyboard (desktop preview) ---
+  // Swipe up = next, so we map ArrowDown / Space / Enter / ArrowRight → next.
+  // Swipe down = previous, so ArrowUp / ArrowLeft / Backspace → previous.
   window.addEventListener("keydown", (e) => {
     if (cardViewEl.classList.contains("active")) {
-      if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter") {
+      if (e.key === " " || e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
-        advance();
+        goNext();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft" || e.key === "Backspace") {
+        e.preventDefault();
+        goPrevious();
       } else if (e.key === "Escape") {
         goToPicker();
       }
