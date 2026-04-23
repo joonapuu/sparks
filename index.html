@@ -3768,32 +3768,29 @@ window.CARDS_DATA = {
 (function () {
   "use strict";
 
-  // Category → color theme. 14 pastel tiles matching the seven image pairs,
-  // each pair sharing a dark-tinted text colour in the same hue family:
-  //   pink+peach     / burnt brown     (row 1)
-  //   yellow+lime    / dark olive      (row 2)
-  //   mint+light blue/ dark teal       (row 3)
-  //   lilac+dusty pk / dark wine       (row 4)
-  //   periwinkle+lav / dark navy       (row 5)
-  //   grey+grey      / charcoal        (row 6)
-  //   pale grn+p.mnt / dark forest     (row 7)
-  // Arranged so every pair's two tiles, and every family's cousin hues, are
-  // non-adjacent in the alphabetical 2×7 grid.
+  // Category → color theme. A bolder 14-tile palette — mixes saturated brights
+  // (orange, sky, coral), deep darks (teal, navy, brick), muted mediums
+  // (sage, amber, slate), and soft pastels (peach, mint, blue-grey).
+  //   5 blue-ish tiles: dark teal / slate / blue-grey / sky / dark navy
+  //   5 warm tiles:     orange / pale peach / coral / amber / dark brick
+  //   4 green tiles:    sage / pale mint / dark olive / sage-mint-grey
+  // Arranged alphabetically so no two same-family tiles end up neighbours,
+  // and brightness alternates so no row is entirely dark or entirely light.
   const THEMES = {
-    "Brand Strategy":        { bg: "#C7DC7A", fg: "#2A2B0D" }, // lime
-    "Business Design":       { bg: "#C9C9C9", fg: "#333333" }, // grey #1
-    "Campaign":              { bg: "#BED6E1", fg: "#0F3239" }, // light blue
-    "Conversion":            { bg: "#CDE0BD", fg: "#102D1E" }, // pale green
-    "Graphic":               { bg: "#D4C670", fg: "#2A2B0D" }, // yellow
-    "Human-Centric":         { bg: "#DFC6DB", fg: "#3E0C2A" }, // lilac
-    "Innovation":            { bg: "#EACFD0", fg: "#411008" }, // pink
-    "Machine Learning":      { bg: "#C0E1D6", fg: "#0F3239" }, // mint
-    "Naming":                { bg: "#C9CDDE", fg: "#1C1C4D" }, // periwinkle
-    "Planet-Centric":        { bg: "#E6CCB2", fg: "#411008" }, // peach
-    "Serendipity":           { bg: "#BEDECA", fg: "#102D1E" }, // pale mint
-    "Service Design":        { bg: "#D6CBDE", fg: "#1C1C4D" }, // lavender
-    "Social Media Strategy": { bg: "#E0C7D0", fg: "#3E0C2A" }, // dusty pink
-    "Storytelling":          { bg: "#C9C9C9", fg: "#333333" }  // grey #2
+    "Brand Strategy":        { bg: "#8BA167", fg: "#3D4B12" }, // sage green
+    "Business Design":       { bg: "#A42C23", fg: "#F5A5A1" }, // dark brick
+    "Campaign":              { bg: "#EBC5B6", fg: "#AB6F74" }, // pale peach
+    "Conversion":            { bg: "#5EA3E0", fg: "#1C547A" }, // sky blue
+    "Graphic":               { bg: "#4C5476", fg: "#9EC4DC" }, // slate blue
+    "Human-Centric":         { bg: "#A0BEA0", fg: "#3D5F41" }, // sage-mint-grey
+    "Innovation":            { bg: "#F1670A", fg: "#7A2204" }, // vivid orange
+    "Machine Learning":      { bg: "#0E2863", fg: "#7FAFD1" }, // dark navy
+    "Naming":                { bg: "#B0D3BC", fg: "#456647" }, // pale mint
+    "Planet-Centric":        { bg: "#E58975", fg: "#8A223E" }, // coral
+    "Serendipity":           { bg: "#BBC2CC", fg: "#6A737D" }, // light blue-grey
+    "Service Design":        { bg: "#474F18", fg: "#A2B07D" }, // dark olive
+    "Social Media Strategy": { bg: "#D9A541", fg: "#6A3904" }, // amber
+    "Storytelling":          { bg: "#0F3937", fg: "#83A598" }  // dark teal
   };
   const DEFAULT_THEME = { bg: "#eeeeee", fg: "#222222" };
 
