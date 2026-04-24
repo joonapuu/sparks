@@ -58,13 +58,12 @@
     /* ---------- screens ---------- */
     .screen {
       position: fixed;
+      /* inset:0 alone fills the entire visual viewport on iOS PWA, including
+         the home-indicator safe area. Do NOT add an explicit height — 100dvh
+         (and -webkit-fill-available) can resolve to LESS than the full
+         viewport on iOS standalone mode, which leaves a visible gap at the
+         bottom where the dark body background bleeds through. */
       inset: 0;
-      /* Ensure each screen fills the full dynamic viewport on iOS PWA —
-         without this, the bottom safe-area can show the body background. */
-      height: 100vh;
-      height: -webkit-fill-available;
-      height: 100dvh;
-      width: 100vw;
       display: flex;
       flex-direction: column;
       opacity: 0;
