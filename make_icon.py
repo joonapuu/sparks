@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw
 import base64
 import math
 import re
+import sys
 
 OUT_DIR = Path(__file__).parent
 
@@ -89,6 +90,13 @@ def inline_into_html():
           f"({html_path.stat().st_size:,} bytes)")
 
 def main():
+    # --inline-only: skip regeneration, just re-inline the existing icon-180.png
+    # into sparks.html. Use this after manually replacing icon-180.png with your
+    # own design, so you don't lose it to the PIL generator.
+    if "--inline-only" in sys.argv:
+        inline_into_html()
+        return
+
     master = make_icon(1024)
     master.save(OUT_DIR / "icon.png", "PNG", optimize=True)
     print(f"Wrote icon.png (1024x1024)")
