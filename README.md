@@ -4,23 +4,23 @@ A mobile-first webapp that shows cards from 14 categories (~60 each, 839 cards t
 
 ## Files
 
-- `index.html` — the entire app in one self-contained file (HTML + CSS + JS + all 839 cards + the app icon inlined as a data URI). This is the only file you need to run or deploy.
+- `sparks.html` — the entire app in one self-contained file (HTML + CSS + JS + all 839 cards + the app icon inlined as a data URI). This is the only file you need to run or deploy.
 - `cards.js` — the same card data as a standalone JS file, for reference/editing.
 - `raw_notes.txt` — the original raw text from your Apple Notes, preserved as a backup.
-- `parse.py` — regenerates `cards.js` **and** re-inlines the data into `index.html`. Run `python3 parse.py` after editing the raw notes.
-- `icon.png` / `icon-180.png` — the Sparks app icon (1024×1024 master and 180×180 for iOS home screen). Already inlined inside `index.html` as a data URI, so they're only needed if you deploy the whole folder or want to edit the art.
-- `make_icon.py` — regenerates the icons. Edit the colors in the script, run `python3 make_icon.py`, then re-base64 and paste into `index.html` if you want a different icon.
+- `parse.py` — regenerates `cards.js` **and** re-inlines the data into `sparks.html`. Run `python3 parse.py` after editing the raw notes.
+- `icon.png` / `icon-180.png` — the Sparks app icon (1024×1024 master and 180×180 for iOS home screen). Already inlined inside `sparks.html` as a data URI, so they're only needed if you deploy the whole folder or want to edit the art.
+- `make_icon.py` — regenerates the icons. Edit the colors in the script, run `python3 make_icon.py`, then re-base64 and paste into `sparks.html` if you want a different icon.
 
-Everything you need to deploy is just `index.html` on its own — it has no external dependencies.
+Everything you need to deploy is just `sparks.html` on its own — it has no external dependencies.
 
 ## Run it locally first
 
-Double-click `index.html` to open in Safari or Chrome — the app runs locally with no server needed. Once you're happy, deploy to the web using one of the options below.
+Double-click `sparks.html` to open in Safari or Chrome — the app runs locally with no server needed. Once you're happy, deploy to the web using one of the options below.
 
 ## Deploy — Option A: Netlify (easiest, recommended)
 
 1. Go to https://app.netlify.com/drop
-2. Drag **just `index.html`** onto the drop zone (or the whole folder — either works).
+2. Drag **just `sparks.html`** onto the drop zone (or the whole folder — either works).
 3. Netlify gives you a URL like `https://quirky-name-12345.netlify.app`. Done.
 4. (Optional) Sign in to rename the site or attach a custom domain.
 
@@ -29,7 +29,7 @@ No git, no terminal — this is the fastest path to a live URL.
 ## Deploy — Option B: GitHub Pages
 
 1. Create a new public GitHub repo (e.g., `sparks-cards`).
-2. Upload `index.html` to the root of the repo (use the GitHub web UI: "Add file → Upload files").
+2. Upload `sparks.html` to the root of the repo (use the GitHub web UI: "Add file → Upload files").
 3. In the repo, go to **Settings → Pages**.
 4. Under "Build and deployment", set **Source** to "Deploy from a branch", then select `main` / `(root)` and Save.
 5. Wait ~30 seconds. Your site will be live at `https://<your-username>.github.io/sparks-cards/`.
@@ -68,4 +68,4 @@ Alternatively, you can edit `cards.js` directly — it's just JSON inside a vari
 
 ## Customizing the colors
 
-Open `index.html`, search for `const THEMES = {`, and change any hex color. Redeploy.
+Open `sparks.html`, search for `const THEMES = {`, and change any hex color. Redeploy.

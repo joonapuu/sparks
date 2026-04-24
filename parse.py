@@ -113,10 +113,10 @@ def main():
     OUT.write_text(js_content, encoding="utf-8")
     print(f"\nWrote {OUT.name} ({OUT.stat().st_size:,} bytes)")
 
-    # Also update index.html to embed the data inline, so the file is fully
+    # Also update sparks.html to embed the data inline, so the file is fully
     # self-contained (works in previews, works locally by double-clicking,
     # works on any static host).
-    index_path = Path(__file__).parent / "index.html"
+    index_path = Path(__file__).parent / "sparks.html"
     if index_path.exists():
         html = index_path.read_text(encoding="utf-8")
         import re as _re
@@ -141,7 +141,7 @@ def main():
             index_path.write_text(html, encoding="utf-8")
             print(f"Updated {index_path.name} ({index_path.stat().st_size:,} bytes, data inlined)")
         else:
-            print("WARN: Could not find the data-script block in index.html to inline into.")
+            print("WARN: Could not find the data-script block in sparks.html to inline into.")
 
 if __name__ == "__main__":
     main()
