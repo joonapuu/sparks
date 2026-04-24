@@ -9,7 +9,7 @@ A mobile-first webapp that shows cards from 14 categories (~60 each, 839 cards t
 - `raw_notes.txt` — the original raw text from your Apple Notes, preserved as a backup.
 - `parse.py` — regenerates `cards.js` **and** re-inlines the data into `sparks.html`. Run `python3 parse.py` after editing the raw notes.
 - `icon.png` / `icon-180.png` — the Sparks app icon (1024×1024 master and 180×180 for iOS home screen). Already inlined inside `sparks.html` as a data URI, so they're only needed if you deploy the whole folder or want to edit the art.
-- `make_icon.py` — regenerates the icons. Edit the colors in the script, run `python3 make_icon.py`, then re-base64 and paste into `sparks.html` if you want a different icon.
+- `make_icon.py` — regenerates the icons. Edit the colors in the script, run `python3 make_icon.py`, and it will also auto-re-inline `icon-180.png` as the apple-touch-icon data URI inside `sparks.html`.
 
 Everything you need to deploy is just `sparks.html` on its own — it has no external dependencies.
 

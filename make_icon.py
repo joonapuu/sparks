@@ -11,7 +11,9 @@ Produces:
 """
 from pathlib import Path
 from PIL import Image, ImageDraw
+import base64
 import math
+import re
 
 OUT_DIR = Path(__file__).parent
 
@@ -57,6 +59,35 @@ def make_icon(size: int) -> Image.Image:
 
     return img
 
+def inline_into_html():
+    """Re-inline icon-180.png as the apple-touch-icon data URI in sparks.html.
+
+    sparks.html is a single self-contained file that embeds the icon as a
+    base64 data URI. Without this step, regenerating the PNGs wouldn't
+    change what users actually see when they "Add to Home Screen", because
+    the HTML would still carry the old base64 blob.
+    """
+    html_path = OUT_DIR / "sparks.html"
+    icon_path = OUT_DIR / "icon-180.png"
+    if not html_path.exists():
+        print(f"Skipped inlining: {html_path.name} not found")
+        return
+    new_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
+    html = html_path.read_text(encoding="utf-8")
+    pattern = re.compile(
+        r'(rel="apple-touch-icon"[^>]*href="data:image/png;base64,)[^"]+(")'
+    )
+    new_html, n = pattern.subn(
+        lambda m: m.group(1) + new_b64 + m.group(2), html, count=1
+    )
+    if n != 1:
+        print(f"WARN: Could not find apple-touch-icon data URI in {html_path.name}; "
+              f"skipped inlining.")
+        return
+    html_path.write_text(new_html, encoding="utf-8")
+    print(f"Inlined icon-180.png into {html_path.name} "
+          f"({html_path.stat().st_size:,} bytes)")
+
 def main():
     master = make_icon(1024)
     master.save(OUT_DIR / "icon.png", "PNG", optimize=True)
@@ -66,6 +97,8 @@ def main():
     smaller = master.resize((180, 180), Image.LANCZOS)
     smaller.save(OUT_DIR / "icon-180.png", "PNG", optimize=True)
     print(f"Wrote icon-180.png (180x180)")
+
+    inline_into_html()
 
 if __name__ == "__main__":
     main()
