@@ -58,12 +58,15 @@
     /* ---------- screens ---------- */
     .screen {
       position: fixed;
-      /* inset:0 alone fills the entire visual viewport on iOS PWA, including
-         the home-indicator safe area. Do NOT add an explicit height — 100dvh
-         (and -webkit-fill-available) can resolve to LESS than the full
-         viewport on iOS standalone mode, which leaves a visible gap at the
-         bottom where the dark body background bleeds through. */
+      /* iOS PWA bug: on first paint after launching from the home screen,
+         `inset:0` (and `100dvh`) sometimes computes against a stale viewport
+         that excludes the home-indicator area. Rotation triggers a re-layout
+         and fixes it. As a belt-and-suspenders, we ALSO pin the height to a
+         JS-measured `--app-h` (set from `window.innerHeight` on load /
+         resize / orientationchange — see the IIFE further down). The taller
+         of the two wins, which gives us edge-to-edge fill in every case. */
       inset: 0;
+      height: var(--app-h, 100%);
       display: flex;
       flex-direction: column;
       opacity: 0;
@@ -3766,6 +3769,30 @@ window.CARDS_DATA = {
 <script>
 (function () {
   "use strict";
+
+  // ---------- iOS PWA viewport-height fix ----------
+  // On iOS, when the app is launched from the home screen in standalone mode,
+  // the initial paint can compute the viewport without the home-indicator
+  // area, leaving a visible gap at the bottom. Rotation snaps it back.
+  // Workaround: measure `window.innerHeight` (or visualViewport.height) and
+  // expose it as a CSS variable `--app-h`, then have `.screen` use it as a
+  // hard pixel height. We re-measure on load, after a delayed tick (catches
+  // the stale-on-first-paint case), and on every resize/orientation event.
+  function syncAppHeight() {
+    var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    document.documentElement.style.setProperty("--app-h", h + "px");
+  }
+  syncAppHeight();
+  window.addEventListener("resize", syncAppHeight);
+  window.addEventListener("orientationchange", syncAppHeight);
+  window.addEventListener("load", syncAppHeight);
+  // Two extra deferred passes catch iOS's late safe-area resolution on cold
+  // launch from home screen — without these, the first paint can stick.
+  setTimeout(syncAppHeight, 100);
+  setTimeout(syncAppHeight, 500);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncAppHeight);
+  }
 
   // Category → color theme. A bolder 14-tile palette — mixes saturated brights
   // (orange, sky, coral), deep darks (teal, navy, brick), muted mediums
